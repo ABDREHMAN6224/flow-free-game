@@ -19,8 +19,7 @@ pairs = {
     'm':[(3,6),(5,4)],
     'r':[(4,1),(4,4)],
     'y':[(5,0),(5,1)]
-
-    
+  
 }
 
 initial_state = {color: [pairs[color][0]] for color in pairs}
@@ -112,31 +111,45 @@ class FlowFreeGame:
                         self.state[self.current_color].pop()
 
 
-    def drawSolution(self, state):
-        # print 2d matrix with solution
-        for color in state:
-            for position in state[color]:
+    def draw_solution(self,grid, solution):
+        """
+        draws 2d grid with proper spacing to show paths of colors
+        """
+
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j] != 0:
+                    print(grid[i][j], end=' ')
+                else:
+                    print(' ', end=' ')
+            print()
+
+        for color in solution:
+            for position in solution[color]:
                 x, y = position
-                self.grid[x][y] = color
-        for row in self.grid:
-            print(row)
-        print("\n\n\n")
-        
+                grid[x][y] =color
+
+        print()
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                print(grid[i][j], end=' ')
+            print()
+            
 
     
 
     def solve(self):
         self.dfs(self.pairs[self.current_color][0])
-        self.drawSolution(self.state)
+        self.draw_solution(self.grid, overall_history[-1])
         return self.state
 
 game = FlowFreeGame(grid, pairs)
 game.solve()
 
-# with open('output.txt', 'w') as f:
-#     for state in overall_history:
-#         f.write(str(state))
-#         f.write('\n')
+with open('output.txt', 'w') as f:
+    for state in overall_history:
+        f.write(str(state))
+        f.write('\n')
 
 
 
