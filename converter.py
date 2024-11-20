@@ -32,10 +32,8 @@ try:
 
         # Convert the screenshot to a NumPy array
         frame = np.array(screenshot)
-        # conver to gray
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # frame = frame[:, :, :3]  # Drop the alpha channel
-        # frame = frame[:, :, ::-1]  # Convert BGRA to RGB
+
+        
 
 
         # Update the image in the plot
