@@ -12,7 +12,7 @@ grid = [
 ]
 
 pairs = {
-    'p': [(0,1),(0,7)],
+    'p': [(0,0),(0,7)],
     'b':[(0,4),(2,2)],
     'o':[(1,6),(7,3)],
     'g':[(2,4),(2,6)],
@@ -72,7 +72,6 @@ class FlowFreeGame:
 
     def dfs(self, color_idx, current_position):
         if color_idx == len(self.colors):
-            self.solution_found = True
             print("All colors connected successfully.")
             return True
 
@@ -94,7 +93,6 @@ class FlowFreeGame:
             if self.is_valid_move(new_position, color):
                 self.grid[new_position[0]][new_position[1]] = color
                 self.paths[color].append(new_position)
-
                 if self.dfs(color_idx, new_position):
                     return True
                 self.grid[new_position[0]][new_position[1]] = 0
@@ -107,25 +105,14 @@ class FlowFreeGame:
         """
         draws 2d grid with proper spacing to show paths of colors
         """
-
         for i in range(len(grid)):
             for j in range(len(grid[0])):
-                if grid[i][j] != 0:
-                    print(grid[i][j], end=' ')
+                if grid[i][j] == 0:
+                    print("  ", end="")
                 else:
-                    print(' ', end=' ')
+                    print(f"{grid[i][j]} ", end="")
             print()
-
-        for color in solution:
-            for position in solution[color]:
-                x, y = position
-                grid[x][y] =color
-
-        print()
-        for i in range(len(grid)):
-            for j in range(len(grid[0])):
-                print(grid[i][j], end=' ')
-            print()
+        print
             
 
     
