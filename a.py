@@ -20,9 +20,11 @@ pairs = {
     'm':[(3,6),(6,4)],
     'r':[(4,1),(4,3)],
     'y':[(0,0),(6,1)]
-
-  
 }
+
+# sort paris keys accouding to distance
+pairs = dict(sorted(pairs.items(), key=lambda x: abs(x[1][0][0] - x[1][1][0]) + abs(x[1][0][1] - x[1][1][1])))
+
 
 initial_state = {color: [pairs[color][0]] for color in pairs}
 overall_history = []
@@ -80,7 +82,7 @@ class FlowFreeGame:
         x, y = current_position
 
         if (x, y) == end:
-            print(f"Color {color} connected successfully.")
+            # print(f"Color {color} connected successfully.")
             return self.dfs(color_idx + 1, self.pairs[self.colors[color_idx + 1]][0] if color_idx + 1 < len(self.colors) else None)
 
         visited = set(self.paths[color])
