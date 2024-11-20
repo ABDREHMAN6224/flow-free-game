@@ -1,24 +1,26 @@
 
 import json
 grid = [
-    ['p', 0, 0, 0, 'b', 0, 0,'p'],
-    ['y',0, 0, 0, 0, 0, 'o', 0],
-    [0, 0, 'b', 0, 'g', 0, 'g',0],
-    [0, 0, 0, 0, 'l', 0, 'm',0],
-    [0, 'r', 0, 0, 'r', 0, 0,0],
-    ['l', 'y', 0, 'o', 'm', 0, 0,0],
-    [0,0, 0, 0, 0, 0, 0, 0],
+    ['p', 0, 0, 0, 'b', 0, 0, 'p'],
+    ['y', 0, 0, 0, 0, 0, 'o', 0],
+    [0, 0, 'b', 0, 'g', 0, 'g', 0],
+    [0, 0, 0, 0, 'l', 0, 'm', 0],
+    [0, 'r', 0, 0, 'r', 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    ['l', 'y', 0, 'o', 'm', 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
 ]
 
 pairs = {
     'p': [(0,1),(0,7)],
     'b':[(0,4),(2,2)],
-    'o':[(1,6),(5,3)],
+    'o':[(1,6),(7,3)],
     'g':[(2,4),(2,6)],
-    'l':[(3,4),(5,3)],
-    'm':[(3,6),(5,4)],
-    'r':[(4,1),(4,4)],
-    'y':[(5,0),(5,1)]
+    'l':[(3,4),(6,0)],
+    'm':[(3,6),(6,4)],
+    'r':[(4,1),(4,3)],
+    'y':[(0,0),(6,1)]
+
   
 }
 
@@ -44,10 +46,12 @@ class FlowFreeGame:
         self.pairs = pairs
         self.state = initial_state.copy()
         self.colors = list(self.pairs.keys())
+        self.paths = {color: [pairs[color][0]] for color in self.colors}
         self.color_idx = 0
         self.current_color = self.colors[self.color_idx]
         self.done = False
         self.states_history = [] 
+        self.solution_found = False
 
         
 
@@ -55,60 +59,48 @@ class FlowFreeGame:
 
         
 
-    def is_valid_move(self, position):
+    def is_valid_move(self, position,color):
         x, y = position
         if x < 0 or x >= len(self.grid) or y < 0 or y >= len(self.grid[0]):
             return False
-        if self.grid[x][y] != 0:
+        elif self.grid[x][y] == color:
+            return True
+        elif self.grid[x][y] != 0 :
             return False
         return True
 
 
-    def dfs(self, current_position):
-        if self.done:
-            reslt = self.state.copy()
-            print(reslt)
-            print("Done")
-            return
+    def dfs(self, color_idx, current_position):
+        if color_idx == len(self.colors):
+            self.solution_found = True
+            print("All colors connected successfully.")
+            return True
 
-        if self.color_idx == len(self.colors):
-            print("All colors done")
-            self.done = True
-            return
+        color = self.colors[color_idx]
+        _, end = self.pairs[color]
+        x, y = current_position
 
-        if current_position == self.pairs[self.current_color][1]:
-            print(f"Done with {current_position}, target: {self.pairs[self.current_color][1]}, __________")
-            self.color_idx += 1
-           
-            if self.color_idx == len(self.colors):
-                self.done = True
-                return
+        if (x, y) == end:
+            print(f"Color {color} connected successfully.")
+            return self.dfs(color_idx + 1, self.pairs[self.colors[color_idx + 1]][0] if color_idx + 1 < len(self.colors) else None)
 
-            self.current_color = self.colors[self.color_idx]
-            self.dfs(self.pairs[self.current_color][0])
-            return
-        # print(f"Done with {current_position}, target: {self.pairs[self.current_color][1]}")
+        visited = set(self.paths[color])
 
         for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-            new_position = (current_position[0] + dx, current_position[1] + dy)
-            if new_position == self.pairs[self.current_color][1]:
-                print(f"Found target {new_position}")
-                self.state[self.current_color].append(new_position)
-                self.states_history.append(self.state.copy())
-                overall_history.append(json.loads(json.dumps(self.state)))
-                self.dfs(new_position)
+            new_position = (x + dx, y + dy)
 
-            elif self.is_valid_move(new_position):
-                self.grid[new_position[0]][new_position[1]] = self.current_color
-                if not self.done:
-                    self.state[self.current_color].append(new_position)
-                    self.states_history.append(self.state.copy())
-                    overall_history.append(json.loads(json.dumps(self.state)))
-                self.dfs(new_position)
+            if new_position in visited:
+                continue
+            if self.is_valid_move(new_position, color):
+                self.grid[new_position[0]][new_position[1]] = color
+                self.paths[color].append(new_position)
+
+                if self.dfs(color_idx, new_position):
+                    return True
                 self.grid[new_position[0]][new_position[1]] = 0
-                if not self.done:
-                    if len(self.state[self.current_color]) > 0:
-                        self.state[self.current_color].pop()
+                self.paths[color].pop()
+
+        return False
 
 
     def draw_solution(self,grid, solution):
@@ -139,17 +131,16 @@ class FlowFreeGame:
     
 
     def solve(self):
-        self.dfs(self.pairs[self.current_color][0])
-        self.draw_solution(self.grid, overall_history[-1])
-        return self.state
+        if self.dfs(0, self.pairs[self.colors[0]][0]):
+            print("Solution found:")
+            self.draw_solution(self.grid, self.paths)
+        else:
+            print("No solution exists.")
+
 
 game = FlowFreeGame(grid, pairs)
 game.solve()
 
-with open('output.txt', 'w') as f:
-    for state in overall_history:
-        f.write(str(state))
-        f.write('\n')
 
 
 
