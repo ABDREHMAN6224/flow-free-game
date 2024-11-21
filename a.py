@@ -1,105 +1,124 @@
-import numpy as np
-import json
-grid = [
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-    [0, 0, 0, 0, 0, 0, 0, 0,0],
-]
+from z3 import Solver, Int, If, And, Or, sat, Sum
 
+grid_size = 9
+grid = [[0] * grid_size for _ in range(grid_size)]
 pairs = {
-    'b': [(0, 7), (6,5)],
-    'r': [(0, 8), (4,3)],
-    'g': [(1, 7), (5,3)],
-    'y': [(0, 0), (6,6)],
-    'o': [(4,5), (7,1)],
-
+    1: [(1, 1), (1, 7)],
+    2: [(2, 1), (8, 8)],
+    3: [(1, 6), (5, 4)],
+    4: [(3, 6), (8, 0)],
+    5: [(3, 1), (5, 7)],
 }
 
-# sort paris keys accouding to distance
-pairs = dict(sorted(pairs.items(), key=lambda x: abs(x[1][0][0] - x[1][1][0]) + abs(x[1][0][1] - x[1][1][1])))
+# Map colors to numbers
+color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
+
+# Place fixed start and end points in the grid
+for color, positions in pairs.items():
+    for x, y in positions:
+        grid[x][y] = color_map[color]
+
+    
+
+# Solver function
+def solve_flow_with_paths(grid, size, pairs, color_map):
+    B = [[Int(f'B_{i}_{j}') for j in range(size)] for i in range(size)]
+    solver = Solver()
+
+    # Constraint 1: Each cell is either 0 or one of the color indices
+    for i in range(size):
+        for j in range(size):
+            solver.add(Or(B[i][j] == 0, Or([B[i][j] == color_idx for color_idx in color_map.values()])))
+
+    # Constraint 2: Fixed positions must have their assigned color
+    for i in range(size):
+        for j in range(size):
+            if grid[i][j] != 0:
+                solver.add(B[i][j] == grid[i][j])
+
+    #  Constraint : Flow continuity for each color
+    for i in range(size):
+        for j in range(size):
+            same_neighbours = Sum([If(B[i][j] == B[k][l], 1, 0)
+                                      for k in range(size) for l in range(size) if
+                                      abs(k - i) + abs(l - j) == 1])
+            
+             
+            if grid[i][j] != 0:
+                solver.add(Sum(same_neighbours) == 1)
+            else:
+                solver.add(Or(Sum(same_neighbours) == 2, B[i][j] == 0))   
+
+            
 
 
-initial_state = {color: [pairs[color][0]] for color in pairs}
-overall_history = []
+    # Solve the constraints
+    if solver.check() == sat:
+        model = solver.model()
+        solution = [[model[B[i][j]].as_long() for j in range(size)] for i in range(size)]
+        return solution
+    else:
+        return None
 
-class FlowFreeGame:
-
-    def __init__(self, grid, pairs):
-        self.grid = grid
-        self.pairs = pairs
-        self.state = initial_state.copy()
-        self.colors = list(self.pairs.keys())
-        self.paths = {color: [pairs[color][0]] for color in self.colors}
-        self.color_idx = 0
-        self.current_color = self.colors[self.color_idx]
-        self.done = False
-        self.states_history = [] 
-        self.solution_found = False
-
-        
-
-   
-
-        
-
-    def is_valid_move(self, position,color):
-        x, y = position
-        if x < 0 or x >= len(self.grid) or y < 0 or y >= len(self.grid[0]):
-            return False
-        elif self.grid[x][y] == color:
+def is_valid_move(matrix, visited, current_position, next_position,no):
+    i, j = next_position
+    # return 0 <= i < len(matrix) and 0 <= j < len(matrix[0]) and not visited[i][j] and matrix[i][j] == no
+    if 0 <= i < len(matrix) and 0 <= j < len(matrix[0]):
+        if not visited[i][j] and matrix[i][j] == no:
             return True
-        elif self.grid[x][y] != 0 :
-            return False
-        return True
+    
+    return False
+
+def dfs(matrix, visited, current_position, target_position, path, all_paths,no):
+    i, j = current_position
+    visited[i][j] = True
+    path.append(current_position)
+    if current_position == target_position:
+        all_paths.append(path.copy())
+    else:
+        for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            next_position = (i + di, j + dj)
+            if is_valid_move(matrix, visited, current_position, next_position,no):
+                dfs(matrix, visited, next_position, target_position, path, all_paths,no)
+
+    path.pop()
+    visited[i][j] = False
 
 
-    def dfs(self, color_idx, current_position):
-        if color_idx == len(self.colors):
-            print("All colors connected successfully.")
-            return True
+def finalPath(no,matrix,coord,positionsonmap):
 
-        color = self.colors[color_idx]
-        _, end = self.pairs[color]
-        x, y = current_position
+    num = sum(row.count(no) for row in matrix)
+    M = len(matrix)
+    N = len(matrix[0])
 
-        if (x, y) == end:
-            # print(f"Color {color} connected successfully.")
-            return self.dfs(color_idx + 1, self.pairs[self.colors[color_idx + 1]][0] if color_idx + 1 < len(self.colors) else None)
+    visited = [[False for _ in range(N)] for _ in range(M)]
+    path = []
+    all_paths = []
+    src = pairs[no][0]
+    dest = pairs[no][1]
+    dfs(matrix, visited, src, dest, path, all_paths,no)
+    
+    return all_paths
 
-        # print(self.paths[color])
+def findPaths(grid, pairs, color_map):
+    ans = {}
+    for color in pairs.keys():
+        p=finalPath(color,grid,"",pairs[color])
+        ans[color] = p
 
-        
-        visited = set(self.paths[color])
-        new_positions = np.array([[0, 1], [0, -1], [1, 0], [-1, 0]]) + np.array([x, y])
-        new_positions_list = new_positions.tolist()
-        new_positions = sorted(new_positions_list, key=lambda x: abs(x[0] - end[0]) + abs(x[1] - end[1]))
+    return ans
 
+solved_grid = solve_flow_with_paths(grid, grid_size, pairs, color_map)
 
-
-        for new_position in new_positions:
-            new_position = tuple(new_position)
-            if new_position in visited:
-                continue
-            if self.is_valid_move(new_position, color):
-                self.grid[new_position[0]][new_position[1]] = color
-                self.paths[color].append(new_position)
-                # visited.add(new_position)
-                if self.dfs(color_idx, new_position):
-                    return True
-                self.grid[new_position[0]][new_position[1]] = 0
-                self.paths[color].pop()
-                # visited.remove(new_position)
-
-        return False
+ans=findPaths(solved_grid, pairs, color_map)
 
 
-    def draw_solution(self,grid, solution):
+for color, paths in ans.items():
+    path=paths[0]
+    for x, y in path:
+        grid[x][y] = color_map[color]
+
+def draw_solution(grid):
         """
         draws 2d grid with proper spacing to show paths of colors
         """
@@ -110,32 +129,6 @@ class FlowFreeGame:
                 else:
                     print(f"{grid[i][j]} ", end="")
             print()
-        print
-            
+        print()
 
-    
-
-    def solve(self):
-        for color in self.pairs:
-            start, end = self.pairs[color]
-            self.grid[start[0]][start[1]] = color
-            self.grid[end[0]][end[1]] = color
-
-
-        if self.dfs(0, self.pairs[self.colors[0]][0]):
-            print("Solution found:")
-            self.draw_solution(self.grid, self.paths)
-        else:
-            print("No solution exists.")
-
-
-game = FlowFreeGame(grid, pairs)
-game.solve()
-
-
-
-
-
-
-
-    
+draw_solution(grid)
