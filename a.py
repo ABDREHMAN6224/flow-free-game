@@ -57,7 +57,39 @@ class FlowFreeGame:
 
         
 
-   
+    def is_solvable(self, p):
+        """
+        Check if a pair of colors is solvable
+        """
+        start, end = p
+        x1, y1 = start
+        x2, y2 = end
+        queue = []
+        queue.append((x1, y1))
+        visited = set()
+        visited.add((x1, y1))
+        while queue:
+            x, y = queue.pop(0)
+            if (x, y) == (x2, y2):
+                return True
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                new_x, new_y = x + dx, y + dy
+                if new_x < 0 or new_x >= len(self.grid) or new_y < 0 or new_y >= len(self.grid[0]):
+                    continue
+                if self.grid[new_x][new_y] == 0 and (new_x, new_y) not in visited:
+                    queue.append((new_x, new_y))
+                    visited.add((new_x, new_y))
+        return False
+        # return abs(x1 - x2) + abs(y1 - y2) % 2 == 0
+
+    def all_colors_solvable(self):
+        """
+        Check if all colors are solvable
+        """
+        for p in pairs:
+            if not self.is_solvable(p):
+                return False
+        return True
 
         
 
