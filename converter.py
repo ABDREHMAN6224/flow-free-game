@@ -45,14 +45,16 @@ def image2grid(arr):
     alphabet = 'abcdefghijklmnopqrstuvwxyz'
     index = 0
     pairs = {}
+    colors = {}
     for i in range(N):
         row = []
         for j in range(N):
             d = min(cell_height, cell_width) // 6
             cx, cy = j * cell_width + cell_width // 2, i * cell_height + cell_height // 2
             pixel = tuple(arr[cy][cx][:3][::-1].tolist())
-            if i == 3 and j == 1:
-                print(pixel)
+            
+            # if i == 3 and j == 1:
+            #     print(pixel)
             if pixel in colors.values():
                 for key, value in colors.items():
                     if pixel == value:
@@ -62,6 +64,14 @@ def image2grid(arr):
                             pairs[key] = []
                         pairs[key].append((i, j))
                         break
+            elif np.sum(pixel) > 120:
+                colors[alphabet[index]] = pixel
+                row.append(alphabet[index])
+                print(i, j, alphabet[index])
+                if alphabet[index] not in pairs:
+                    pairs[alphabet[index]] = []
+                pairs[alphabet[index]].append((i, j))
+                index += 1
             else:
                 row.append(' ')
         grid.append(row)
@@ -86,16 +96,17 @@ try:
             print(pairs)
             print(grid)
             i = 0
-            for k in pairs.keys():
-                pairs[i] = pairs[key]
-                del pairs[key]
-                
-            
+            keys = list(pairs.keys())
             grid = [[0] * N for _ in range(N)]
             color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
             for color, positions in pairs.items():
                 for x, y in positions:
                     grid[x][y] = color_map[color]
+                    
+                    
+            # print(grid, pairs, color_map, sep='\n\n')
+            # quit()
+                
             solved_grid = solve_flow_with_paths(grid, 10, pairs, color_map)
             print(solved_grid)
 
