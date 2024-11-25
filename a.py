@@ -1,6 +1,6 @@
 from z3 import Solver, Int, If, And, Or, sat, Sum
 
-grid_size = 9
+grid_size = 10
 grid = [[0] * grid_size for _ in range(grid_size)]
 pairs = {
     1: [(1, 1), (1, 7)],
@@ -8,6 +8,18 @@ pairs = {
     3: [(1, 6), (5, 4)],
     4: [(3, 6), (8, 0)],
     5: [(3, 1), (5, 7)],
+}
+
+pairs =  {
+    'yellow': [(2, 7), (3, 2)],
+    'cyan': [(3, 1), (3, 8)],
+    'orange': [(4, 1), (8, 3)],
+    'green': [(4, 5), (8, 1)],
+    'purple': [(4, 6), (6, 3)],
+    'blue': [(4, 8), (8, 9)],
+    'pink': [(5, 5), (6, 4)],
+    'red': [(6, 2), (9, 9)],
+    'mehroon': [(7, 9), (9, 1)]
 }
 
 # Map colors to numbers
@@ -108,27 +120,31 @@ def findPaths(grid, pairs, color_map):
 
     return ans
 
-solved_grid = solve_flow_with_paths(grid, grid_size, pairs, color_map)
 
-ans=findPaths(solved_grid, pairs, color_map)
+if __name__ == '__main__':
+    solved_grid = solve_flow_with_paths(grid, grid_size, pairs, color_map)
+
+    print(solved_grid)
+
+    ans=findPaths(solved_grid, pairs, color_map)
 
 
-for color, paths in ans.items():
-    path=paths[0]
-    for x, y in path:
-        grid[x][y] = color_map[color]
+    for color, paths in ans.items():
+        path=paths[0]
+        for x, y in path:
+            grid[x][y] = color_map[color]
 
-def draw_solution(grid):
-        """
-        draws 2d grid with proper spacing to show paths of colors
-        """
-        for i in range(len(grid)):
-            for j in range(len(grid[0])):
-                if grid[i][j] == 0:
-                    print("  ", end="")
-                else:
-                    print(f"{grid[i][j]} ", end="")
+    def draw_solution(grid):
+            """
+            draws 2d grid with proper spacing to show paths of colors
+            """
+            for i in range(len(grid)):
+                for j in range(len(grid[0])):
+                    if grid[i][j] == 0:
+                        print("  ", end="")
+                    else:
+                        print(f"{grid[i][j]} ", end="")
+                print()
             print()
-        print()
 
-draw_solution(grid)
+    draw_solution(grid)

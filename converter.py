@@ -85,7 +85,19 @@ try:
             pairs, grid = image2grid(frame)
             print(pairs)
             print(grid)
-            solved_grid = solve_flow_with_paths(grid, 10, pairs, {color: idx + 1 for idx, color in enumerate(pairs.keys())})
+            i = 0
+            for k in pairs.keys():
+                pairs[i] = pairs[key]
+                del pairs[key]
+                
+            
+            grid = [[0] * N for _ in range(N)]
+            color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
+            for color, positions in pairs.items():
+                for x, y in positions:
+                    grid[x][y] = color_map[color]
+            solved_grid = solve_flow_with_paths(grid, 10, pairs, color_map)
+            print(solved_grid)
 
         if key == ord('q'):
             break
