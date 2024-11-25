@@ -40,8 +40,8 @@ color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
 
 # Place fixed start and end points in the grid
 for color, positions in pairs.items():
-    for x, y in positions:
-        grid[x][y] = color_map[color]
+    for r, c in positions:
+        grid[r][c] = color_map[color]
 
     
 
@@ -125,11 +125,39 @@ def finalPath(no,matrix,coord,positionsonmap):
     
     return all_paths
 
+def buildPath(src, dest, colorIndex, grid):
+    queue = [src]
+    visited = set()
+    parent = {}
+    while queue:
+        current = queue.pop(0)
+        if current == dest:
+            break
+        i, j = current
+        for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            next_position = (i + di, j + dj)
+            if 0 <= next_position[0] < len(grid) and 0 <= next_position[1] < len(grid[0]) and grid[next_position[0]][next_position[1]] == colorIndex and next_position not in visited:
+                queue.append(next_position)
+                visited.add(next_position)
+                parent[next_position] = current
+    path = []
+    current = dest
+    while current != src:
+        path.append(current)
+        current = parent[current]
+    path.append(src)
+    path.reverse()
+    return path
+
 def findPaths(grid, pairs, color_map):
     ans = {}
     for color in pairs.keys():
-        p=finalPath(color,grid,"",pairs[color])
-        ans[color] = p
+        # p=finalPath(color,grid,"",pairs[color])
+        # ans[color] = p
+        src, dest = pairs[color]
+        colorIndex = color_map[color]
+        path = buildPath(src, dest, colorIndex, grid)
+        ans[color] = path
 
     return ans
 
@@ -141,11 +169,11 @@ if __name__ == '__main__':
 
     ans=findPaths(solved_grid, pairs, color_map)
 
+    print(ans)
 
-    for color, paths in ans.items():
-        path=paths[0]
-        for x, y in path:
-            grid[x][y] = color_map[color]
+    for color, path in ans.items():
+        for r, c in path:
+            grid[r][c] = color
 
     def draw_solution(grid):
             """

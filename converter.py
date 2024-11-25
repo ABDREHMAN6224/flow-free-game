@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from a import solve_flow_with_paths
+from a import solve_flow_with_paths, findPaths
 from mss import mss
 import cv2
 # from test import image2grid
@@ -86,7 +86,6 @@ def image2grid(arr):
 
 try:
     while True:
-        # start_time = time.time()
         screenshot = sct.grab(region)
         frame = np.array(screenshot)
         cv2.imshow("window", frame)
@@ -101,18 +100,13 @@ try:
             color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
             for color, positions in pairs.items():
                 for x, y in positions:
-                    grid[x][y] = color_map[color]
-                    
-                    
-            # print(grid, pairs, color_map, sep='\n\n')
-            # quit()
-                
+                    grid[x][y] = color_map[color]            
             solved_grid = solve_flow_with_paths(grid, 10, pairs, color_map)
-            print(solved_grid)
+            paths = findPaths(solved_grid, pairs, color_map)
+            print(paths)
 
         if key == ord('q'):
             break
-        # time.sleep(max(0, 1 / 20 - (time.time() - start_time)))
 except KeyboardInterrupt:
     print(frame)
     print("Exited.")
