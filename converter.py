@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from a import solve_flow_with_paths, findPaths
 from mss import mss
 import cv2
+import pyautogui as auto
+auto.FAILSAFE = True
 # from test import image2grid
 
 # Set up MSS for screen capture
@@ -18,6 +20,26 @@ region = {
     "width": 1900 - 1476,  # width of the region
     "height": 797 - 370,  # height of the region
 }
+
+cell_height = region['height'] // N
+cell_width = region['width'] // N
+
+def rc2xy(row, col):
+    return (col + 0.5) * cell_width + region['left'], (row + 0.5) * cell_height + region['top']
+
+def applyPath(path):
+    print(path)
+    for i in range(len(path) - 1):
+        start = path[i]
+        end = path[i + 1]
+        start_x, start_y = start
+        end_x, end_y = end
+        start_x, start_y = rc2xy(start_x, start_y)
+        end_x, end_y = rc2xy(end_x, end_y)
+        if i == 0:
+            auto.moveTo(start_x, start_y)
+        auto.dragTo(end_x, end_y, duration=0.1)
+        time.sleep(0.1)
 
 # Initialize Matplotlib figure
 # plt.ion()  # Interactive mode on
@@ -64,7 +86,7 @@ def image2grid(arr):
                             pairs[key] = []
                         pairs[key].append((i, j))
                         break
-            elif np.sum(pixel) > 120:
+            elif np.sum(pixel) > 100:
                 colors[alphabet[index]] = pixel
                 row.append(alphabet[index])
                 print(i, j, alphabet[index])
@@ -104,6 +126,9 @@ try:
             solved_grid = solve_flow_with_paths(grid, 10, pairs, color_map)
             paths = findPaths(solved_grid, pairs, color_map)
             print(paths)
+            for path in paths:
+                time.sleep(0.1)
+                applyPath(paths[path])
 
         if key == ord('q'):
             break
