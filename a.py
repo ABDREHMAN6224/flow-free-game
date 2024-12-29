@@ -154,6 +154,7 @@ def findPaths(grid, pairs, color_map):
     for color in pairs.keys():
         # p=finalPath(color,grid,"",pairs[color])
         # ans[color] = p
+        print(pairs,color)
         src, dest = pairs[color]
         colorIndex = color_map[color]
         path = buildPath(src, dest, colorIndex, grid)

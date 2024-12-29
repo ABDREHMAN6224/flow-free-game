@@ -27,10 +27,10 @@ N = 10
 
 # Define the region to capture (adjust to target a specific window or area)
 region = {
-    "top": 370,  # y-coordinate of the top edge
-    "left": 1476,  # x-coordinate of the left edge
-    "width": 1900 - 1476,  # width of the region
-    "height": 797 - 370,  # height of the region
+    "top": 355,  # y-coordinate of the top edge
+    "left": 839,  # x-coordinate of the left edge
+    "width": 425,  # width of the region
+    "height": 425,  # height of the region
 }
 
 cell_height = region['height'] // N
@@ -81,9 +81,10 @@ colors = {
     'purple': (127, 0, 127),
     'blue': (12, 41, 255),
     'mehroon': (165, 42, 43),
+    'white': (255, 255, 255),
 }
 
-def image2grid(arr):
+def image2grid(arr,color_map=colors, N=10):
     grid = []
     rows, cols, _ = arr.shape
     cell_height = rows // N
@@ -91,42 +92,39 @@ def image2grid(arr):
     alphabet = 'abcdefghijklmnopqrstuvwxyz'
     index = 0
     pairs = {}
-    colors = {}
+    detected_colors = {}
+
+    def closest_color(pixel, color_map):
+        min_dist = float('inf')
+        best_match = None
+        for key, color in color_map.items():
+            dist = np.linalg.norm(np.array(pixel) - np.array(color))
+            if dist < min_dist:
+                min_dist = dist
+                best_match = key
+        return best_match if min_dist < 50 else None  # Adjust threshold as needed
+
     for i in range(N):
         row = []
         for j in range(N):
-            d = min(cell_height, cell_width) // 6
             cx, cy = j * cell_width + cell_width // 2, i * cell_height + cell_height // 2
-            pixel = tuple(arr[cy][cx][:3][::-1].tolist())
+            pixel = tuple(arr[cy, cx][:3][::-1].tolist())  # BGR to RGB
             
-            # if i == 3 and j == 1:
-            #     print(pixel)
-            if pixel in colors.values():
-                for key, value in colors.items():
-                    if pixel == value:
-                        row.append(key)
-                        print(i, j, key)
-                        if key not in pairs:
-                            pairs[key] = []
-                        pairs[key].append((i, j))
-                        break
-            elif np.sum(pixel) > 100:
-                colors[alphabet[index]] = pixel
-                row.append(alphabet[index])
-                print(i, j, alphabet[index])
-                if alphabet[index] not in pairs:
-                    pairs[alphabet[index]] = []
-                pairs[alphabet[index]].append((i, j))
-                index += 1
+            matched_color = closest_color(pixel, color_map)
+            if matched_color:
+                row.append(matched_color)
+                if matched_color not in pairs:
+                    pairs[matched_color] = []
+                pairs[matched_color].append((i, j))
             else:
                 row.append(' ')
         grid.append(row)
 
+    # Debugging: Print the grid
+    print("Generated Grid:")
     for row in grid:
-        for cell in row:
-            print(cell[0], end=' ')
-        print()
-        
+        print(' '.join(row))
+    
     return pairs, grid
 
 
