@@ -36,6 +36,32 @@ region = {
 cell_height = region['height'] // N
 cell_width = region['width'] // N
 
+def convert_to_straight_lines(path):
+    if not path:
+        return []
+    
+    # Start with the first point
+    straight_path = [path[0]]
+    
+    # Traverse the path
+    for i in range(1, len(path) - 1):
+        x1, y1 = path[i - 1]
+        x2, y2 = path[i]
+        x3, y3 = path[i + 1]
+        
+        # Check if current point lies on a straight line with the previous and next points
+        if (x1 == x2 == x3) or (y1 == y2 == y3):
+            # Continue the line, no need to add the middle point
+            continue
+        else:
+            # Add the point as a turning point
+            straight_path.append((x2, y2))
+    
+    # Always add the last point
+    straight_path.append(path[-1])
+    
+    return straight_path
+
 def rc2xy(row, col):
     w = 1080 - 2
     h = 2400
@@ -47,6 +73,7 @@ def rc2xy(row, col):
 
 def applyPath(path):
     print(path)
+    path = convert_to_straight_lines(path)
     for i in range(len(path) - 1):
         start = path[i]
         end = path[i + 1]
