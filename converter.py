@@ -6,10 +6,22 @@ from mss import mss
 import cv2
 import pyautogui as auto
 auto.FAILSAFE = True
+from ppadb.client import Client
 # from test import image2grid
 
 # Set up MSS for screen capture
 sct = mss()
+adb = Client(host="127.0.0.1", port=5037)
+devices = adb.devices()
+
+if len(devices) == 0:
+    print('No device attached')
+    quit()
+    
+device = devices[0]
+
+# device.shell('input touchscreen swipe 500 1000 500 500 200')
+# quit()
 
 N = 10
 
@@ -25,7 +37,13 @@ cell_height = region['height'] // N
 cell_width = region['width'] // N
 
 def rc2xy(row, col):
-    return (col + 0.5) * cell_width + region['left'], (row + 0.5) * cell_height + region['top']
+    w = 1080 - 2
+    h = 2400
+    cell_width = w // N
+    cell_height = w // N
+    left = 2
+    top = (h // 2) - (w // 2)
+    return (col + 0.5) * cell_width + left, (row + 0.5) * cell_height + top
 
 def applyPath(path):
     print(path)
@@ -36,10 +54,16 @@ def applyPath(path):
         end_x, end_y = end
         start_x, start_y = rc2xy(start_x, start_y)
         end_x, end_y = rc2xy(end_x, end_y)
-        if i == 0:
-            auto.moveTo(start_x, start_y)
-        auto.dragTo(end_x, end_y, duration=0.1)
-        time.sleep(0.1)
+        # if i == 0:
+        #     auto.moveTo(start_x, start_y)
+        # auto.dragTo(end_x, end_y, duration=0.1)
+        # time.sleep(0.1)
+        # if i == 0:
+        #     # auto.moveTo(start_x, start_y)
+        #     device.shell(f'input touchscreen swipe {start_x} {start_y} {end_x} {end_y} 50')
+        # auto.dragTo(end_x, end_y, duration=0.1)
+        device.shell(f'input touchscreen swipe {start_x} {start_y} {end_x} {end_y} 10')
+        # time.sleep(0.1)
 
 # Initialize Matplotlib figure
 # plt.ion()  # Interactive mode on

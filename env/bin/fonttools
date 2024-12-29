@@ -1,4 +1,4 @@
-#!/home/abbas/repos/flow-free-game/env/bin/python3.12
+#!/home/abbas/repos/flow-free-game/env/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
