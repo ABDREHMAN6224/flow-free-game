@@ -2,15 +2,15 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from a import solve_flow_with_paths, findPaths
-from mss import mss
-import cv2
-import pyautogui as auto
-auto.FAILSAFE = True
+# from mss import mss
+# import cv2
+# import pyautogui as auto
+# auto.FAILSAFE = True
 from ppadb.client import Client
 # from test import image2grid
 
 # Set up MSS for screen capture
-sct = mss()
+# sct = mss()
 adb = Client(host="127.0.0.1", port=5037)
 devices = adb.devices()
 
@@ -20,22 +20,40 @@ if len(devices) == 0:
     
 device = devices[0]
 
-# device.shell('input touchscreen swipe 500 1000 500 500 200')
-# quit()
+image = device.screencap()
+with open('screen.png', 'wb') as f:
+    f.write(image)
+    
 
+# show the image
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+
+img = mpimg.imread('screen.png')
+img_array = np.array(img)
+imgplot = plt.imshow(img)
+plt.show()
 N = 10
 
-# Define the region to capture (adjust to target a specific window or area)
-region = {
-    "top": 370,  # y-coordinate of the top edge
-    "left": 1476,  # x-coordinate of the left edge
-    "width": 1900 - 1476,  # width of the region
-    "height": 797 - 370,  # height of the region
-}
+w = 1080 - 2
+h = 2400
+cell_width = w // N
+cell_height = w // N
+left = 0
+top = (h // 2) - (w // 2) - 12
 
-cell_height = region['height'] // N
-cell_width = region['width'] // N
+cropped = img_array[top:top + w, left:left + w]
 
+imgplot = plt.imshow(cropped)
+plt.show()
+# print(img_array.shape)
+cropped = cropped * 255
+print(cropped)
+
+
+# # device.shell('input touchscreen swipe 500 1000 500 500 200')
+# quit()
 def convert_to_straight_lines(path):
     if not path:
         return []
@@ -60,6 +78,9 @@ def convert_to_straight_lines(path):
     # Always add the last point
     straight_path.append(path[-1])
     
+    if (np.subtract(straight_path[-1], straight_path[-2]) ** 2).sum() == 1:
+        straight_path.pop()
+    
     return straight_path
 
 def rc2xy(row, col):
@@ -72,8 +93,8 @@ def rc2xy(row, col):
     return (col + 0.5) * cell_width + left, (row + 0.5) * cell_height + top
 
 def applyPath(path):
-    print(path)
     path = convert_to_straight_lines(path)
+    print("Path: ", path)
     for i in range(len(path) - 1):
         start = path[i]
         end = path[i + 1]
@@ -96,7 +117,7 @@ def applyPath(path):
 # plt.ion()  # Interactive mode on
 # fig, ax = plt.subplots()
 # image = ax.imshow(np.zeros((region['height'], region['width'], 3), dtype=np.uint8))
-window = cv2.namedWindow("window", cv2.WINDOW_NORMAL)
+# window = cv2.namedWindow("window", cv2.WINDOW_NORMAL)
 
 colors = {
     'pink': (255, 10, 202),
@@ -157,35 +178,53 @@ def image2grid(arr):
     return pairs, grid
 
 
-try:
-    while True:
-        screenshot = sct.grab(region)
-        frame = np.array(screenshot)
-        cv2.imshow("window", frame)
-        key = cv2.waitKey(1)
-        if key == ord('s'):
-            pairs, grid = image2grid(frame)
-            print(pairs)
-            print(grid)
-            i = 0
-            keys = list(pairs.keys())
-            grid = [[0] * N for _ in range(N)]
-            color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
-            for color, positions in pairs.items():
-                for x, y in positions:
-                    grid[x][y] = color_map[color]            
-            solved_grid = solve_flow_with_paths(grid, 10, pairs, color_map)
-            paths = findPaths(solved_grid, pairs, color_map)
-            print(paths)
-            for path in paths:
-                time.sleep(0.1)
-                applyPath(paths[path])
+# try:
+#     while True:
+#         screenshot = sct.grab(region)
+#         frame = np.array(screenshot)
+#         cv2.imshow("window", frame)
+#         key = cv2.waitKey(1)
+#         if key == ord('s'):
+#             pairs, grid = image2grid(frame)
+#             print(pairs)
+#             print(grid)
+#             i = 0
+#             keys = list(pairs.keys())
+#             grid = [[0] * N for _ in range(N)]
+#             color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
+#             for color, positions in pairs.items():
+#                 for x, y in positions:
+#                     grid[x][y] = color_map[color]            
+#             solved_grid = solve_flow_with_paths(grid, 10, pairs, color_map)
+#             paths = findPaths(solved_grid, pairs, color_map)
+#             print(paths)
+#             for path in paths:
+#                 time.sleep(0.1)
+#                 applyPath(paths[path])
 
-        if key == ord('q'):
-            break
-except KeyboardInterrupt:
-    print(frame)
-    print("Exited.")
-finally:
-    plt.ioff()  # Turn off interactive mode
-    plt.show()
+#         if key == ord('q'):
+#             break
+# except KeyboardInterrupt:
+#     print(frame)
+#     print("Exited.")
+# finally:
+#     plt.ioff()  # Turn off interactive mode
+#     plt.show()
+
+
+pairs, grid = image2grid(cropped)
+print(pairs)
+print(grid)
+i = 0
+keys = list(pairs.keys())
+grid = [[0] * N for _ in range(N)]
+color_map = {color: idx + 1 for idx, color in enumerate(pairs.keys())}
+for color, positions in pairs.items():
+    for x, y in positions:
+        grid[x][y] = color_map[color]            
+solved_grid = solve_flow_with_paths(grid, 10, pairs, color_map)
+paths = findPaths(solved_grid, pairs, color_map)
+print(paths)
+for path in paths:
+    # time.sleep(0.1)
+    applyPath(paths[path])
